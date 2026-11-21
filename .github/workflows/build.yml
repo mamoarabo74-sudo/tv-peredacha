@@ -1,0 +1,49 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, master]
+    paths: [project.zip, .github/workflows/build.yml]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Unpack code
+        run: mkdir src && unzip -q project.zip -d src
+
+      - name: Build
+        working-directory: src
+        run: gradle assembleRelease --no-daemon
+
+      - name: Rename
+        run: cp src/app/build/outputs/apk/release/app-release.apk TV-Peredacha.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TV-Peredacha
+          path: TV-Peredacha.apk
+
+      - name: Publish download link
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: ТВ Передача
+          body: Скачайте TV-Peredacha.apk ниже и установите на телефон и на телевизор.
+          files: TV-Peredacha.apk
+          make_latest: true
